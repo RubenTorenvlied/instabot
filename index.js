@@ -6,11 +6,16 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 puppeteer.use(StealthPlugin());
 const instaObj = require('instagram-basic-data-scraper-with-username');
-let exportAcc = 'TARGETACC';
+let exportAcc = 'crypto_banter';
 let messagingInitiated = false;
 let sentUsers = [];
-let message = `msg`
-const follow = "followers" // followers || following
+
+
+const message = `yoyo yoghurt`
+const messageTimeout = 10000;
+const amountToSend = 25;
+
+
 async function start() {
     console.log("Initiating")
     browser = await puppeteer.launch({
@@ -25,8 +30,8 @@ async function start() {
 async function visitInstagram() {
     console.log("Logging in...")
     await page.goto(config.base_url);
-    await page.waitForSelector('body > div.RnEpo.Yx5HN > div > div > div > div.mt3GC > button.aOOlW.bIiDR');
-    await page.click('body > div.RnEpo.Yx5HN > div > div > div > div.mt3GC > button.aOOlW.bIiDR');
+    await page.waitForSelector('button.aOOlW.bIiDR');
+    await page.click('button.aOOlW.bIiDR');
     await page.waitForTimeout(1000)
     await page.waitForTimeout(2500);
     /* Click on the username field using the field selector*/
@@ -41,30 +46,30 @@ async function visitInstagram() {
     const exportID = await fetchDataFromUser(exportAcc)
     console.log('ID',exportID)
     console.log("Fetching follower list of " + exportAcc)
-    const res = await page.evaluate(async (exID) => {
+    const res = await page.evaluate(async (exID, amountToSend) => {
 
         let followers = [], followings = []
         try {
             let userId = exID;
             let after = null, has_next = true
-            while (has_next) {
-                await fetch(`https://www.instagram.com/graphql/query/?query_hash=c76146de99bb02f6415203be841dd25a&variables=` + encodeURIComponent(JSON.stringify({
-                    id: userId,
-                    include_reel: true,
-                    fetch_mutual: true,
-                    first: 50,
-                    after: after
-                }))).then(res => res.json()).then(res => {
-                    has_next = res.data.user.edge_followed_by.page_info.has_next_page
-                    after = res.data.user.edge_followed_by.page_info.end_cursor
-                    followers = followers.concat(res.data.user.edge_followed_by.edges.map(({ node }) => {
-                        return {
-                            username: node.username,
-                            full_name: node.full_name
-                        }
-                    }))
-                })
-            }
+            // while (has_next) {
+            //     await fetch(`https://www.instagram.com/graphql/query/?query_hash=c76146de99bb02f6415203be841dd25a&variables=` + encodeURIComponent(JSON.stringify({
+            //         id: userId,
+            //         include_reel: true,
+            //         fetch_mutual: true,
+            //         first: 25,
+            //         // after: after
+            //     }))).then(res => res.json()).then(res => {
+            //         has_next = res.data.user.edge_followed_by.page_info.has_next_page
+            //         after = res.data.user.edge_followed_by.page_info.end_cursor
+            //         followers = followers.concat(res.data.user.edge_followed_by.edges.map(({ node }) => {
+            //             return {
+            //                 username: node.username,
+            //                 full_name: node.full_name
+            //             }
+            //         }))
+            //     })
+            // }
 
             has_next = true
             after = null
@@ -73,7 +78,7 @@ async function visitInstagram() {
                     id: userId,
                     include_reel: true,
                     fetch_mutual: true,
-                    first: 50,
+                    first: amountToSend,
                     after: after
                 }))).then(res => res.json()).then(res => {
                     console.log('res', res.data.user.edge_follow)
@@ -91,12 +96,13 @@ async function visitInstagram() {
         } catch (err) {
             console.log('Invalid username')
         }
-    },exportID)
+    }, exportID, amountToSend)
     console.log("Fetch succeeded")
-
+    console.log("RES: ", res);
     console.log("Sending messages...")
-    for(let i = 0; i<res.followers.length; i++) {
-        await sendMessage(res.followers[i].username, message)
+    for(let i = 0; i<res.following.length; i++) {
+        await sendMessage(res.following[i].username, message);
+        console.log("To next person...");
     }
     console.log("Done.")
     console.log("Terminating...")
@@ -120,11 +126,11 @@ async function sendMessage(username, msg) {
     await page.click('body > div.RnEpo.Yx5HN > div > div > div:nth-child(1) > div > div:nth-child(3) > div > button')
     await page.waitForTimeout(3000);
     await page.type(config.selectors.messagebox, msg);
-    //await page.keyboard.press('Enter')
+    await page.keyboard.press('Enter')
     sentUsers.push(username)
     messagingInitiated = true;
-    await page.waitForTimeout(100000)
-
+    await page.waitForTimeout(messageTimeout)
+    return;
 }
 start();
 
