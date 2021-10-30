@@ -10,9 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
     "fs": "0.0.1-security",
-    "instagram-basic-data-scraper-with-username": "^4.0.1",
     "node-fetch": "^2.6.1",
     "puppeteer": "^7.1.0",
     "puppeteer-extra": "^3.1.17",
